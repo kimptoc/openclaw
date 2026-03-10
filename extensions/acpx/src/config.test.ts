@@ -187,4 +187,161 @@ describe("acpx plugin config parsing", () => {
       }),
     ).toThrow("strictWindowsCmdWrapper must be a boolean");
   });
+
+  it("accepts mcp server maps", () => {
+    const resolved = resolveAcpxPluginConfig({
+      rawConfig: {
+        mcpServers: {
+          canva: {
+            command: "npx",
+            args: ["-y", "mcp-remote@latest", "https://mcp.canva.com/mcp"],
+            env: {
+              CANVA_TOKEN: "secret",
+            },
+          },
+        },
+      },
+      workspaceDir: "/tmp/workspace",
+    });
+
+    expect(resolved.mcpServers).toEqual({
+      canva: {
+        command: "npx",
+        args: ["-y", "mcp-remote@latest", "https://mcp.canva.com/mcp"],
+        env: {
+          CANVA_TOKEN: "secret",
+        },
+      },
+    });
+  });
+
+  it("rejects invalid mcp server definitions", () => {
+    expect(() =>
+      resolveAcpxPluginConfig({
+        rawConfig: {
+          mcpServers: {
+            canva: {
+              command: "npx",
+              args: ["-y", 1],
+            },
+          },
+        },
+        workspaceDir: "/tmp/workspace",
+      }),
+    ).toThrow(
+      "mcpServers.canva must have a command string, optional args array, and optional env object",
+    );
+  });
+
+  it("accepts agentCommand override", () => {
+    const resolved = resolveAcpxPluginConfig({
+      rawConfig: {
+        agentCommand: "npx --yes kilocode@latest",
+      },
+      workspaceDir: "/tmp/workspace",
+    });
+
+    expect(resolved.agentCommand).toBe("npx --yes kilocode@latest");
+  });
+
+  it("trims agentCommand whitespace", () => {
+    const resolved = resolveAcpxPluginConfig({
+      rawConfig: {
+        agentCommand: "  npx --yes kilocode@latest  ",
+      },
+      workspaceDir: "/tmp/workspace",
+    });
+
+    expect(resolved.agentCommand).toBe("npx --yes kilocode@latest");
+  });
+
+  it("resolves agentCommand as undefined when not set", () => {
+    const resolved = resolveAcpxPluginConfig({
+      rawConfig: {},
+      workspaceDir: "/tmp/workspace",
+    });
+
+    expect(resolved.agentCommand).toBeUndefined();
+  });
+
+  it("rejects empty agentCommand", () => {
+    expect(() =>
+      resolveAcpxPluginConfig({
+        rawConfig: {
+          agentCommand: "",
+        },
+        workspaceDir: "/tmp/workspace",
+      }),
+    ).toThrow("agentCommand must be a non-empty string");
+  });
+
+  it("rejects whitespace-only agentCommand", () => {
+    expect(() =>
+      resolveAcpxPluginConfig({
+        rawConfig: {
+          agentCommand: "   ",
+        },
+        workspaceDir: "/tmp/workspace",
+      }),
+    ).toThrow("agentCommand must be a non-empty string");
+  });
+
+  it("rejects non-string agentCommand", () => {
+    expect(() =>
+      resolveAcpxPluginConfig({
+        rawConfig: {
+          agentCommand: 42,
+        },
+        workspaceDir: "/tmp/workspace",
+      }),
+    ).toThrow("agentCommand must be a non-empty string");
+  });
+
+  it("schema accepts mcp server config", () => {
+    const schema = createAcpxPluginConfigSchema();
+    if (!schema.safeParse) {
+      throw new Error("acpx config schema missing safeParse");
+    }
+    const parsed = schema.safeParse({
+      mcpServers: {
+        canva: {
+          command: "npx",
+          args: ["-y", "mcp-remote@latest"],
+          env: {
+            CANVA_TOKEN: "secret",
+          },
+        },
+      },
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+});
+
+describe("toAcpMcpServers", () => {
+  it("converts plugin config maps into ACP stdio MCP entries", () => {
+    expect(
+      toAcpMcpServers({
+        canva: {
+          command: "npx",
+          args: ["-y", "mcp-remote@latest", "https://mcp.canva.com/mcp"],
+          env: {
+            CANVA_TOKEN: "secret",
+          },
+        },
+      }),
+    ).toEqual([
+      {
+        name: "canva",
+        command: "npx",
+        args: ["-y", "mcp-remote@latest", "https://mcp.canva.com/mcp"],
+        env: [
+          {
+            name: "CANVA_TOKEN",
+            value: "secret",
+          },
+        ],
+      },
+    ]);
+  });
 });
