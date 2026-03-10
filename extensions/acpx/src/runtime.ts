@@ -47,6 +47,8 @@ export const ACPX_BACKEND_ID = "acpx";
 const ACPX_RUNTIME_HANDLE_PREFIX = "acpx:v1:";
 const DEFAULT_AGENT_FALLBACK = "codex";
 const ACPX_EXIT_CODE_PERMISSION_DENIED = 5;
+const KILOCODE_AGENT_ID = "kilocode";
+const KILOCODE_AGENT_COMMAND = "npx --yes kilocode@latest";
 const ACPX_CAPABILITIES: AcpRuntimeCapabilities = {
   controls: ["session/set_mode", "session/set_config_option", "session/status"],
 };
@@ -665,6 +667,10 @@ export class AcpxRuntime implements AcpRuntime {
     agent: string;
     cwd: string;
   }): Promise<string | null> {
+    // Hardcoded support for kilocode: use npx to run kilocode as the agent process.
+    if (params.agent === KILOCODE_AGENT_ID) {
+      return KILOCODE_AGENT_COMMAND;
+    }
     if (Object.keys(this.config.mcpServers).length === 0) {
       return null;
     }
