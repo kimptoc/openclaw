@@ -129,9 +129,15 @@ describe("applyMediaUnderstanding – echo transcript", () => {
       source: "test",
       mode: "api-key",
     } as Awaited<ReturnType<typeof modelAuth.resolveApiKeyForProvider>>);
-  const requireApiKeySpy = vi
-    .spyOn(modelAuth, "requireApiKey")
-    .mockImplementation((auth) => (auth as { apiKey?: string }).apiKey ?? "test-key");
+  const requireApiKeySpy = vi.spyOn(modelAuth, "requireApiKey").mockImplementation((auth) => {
+    const apiKey = (auth as { apiKey?: string }).apiKey;
+    if (!apiKey) {
+      throw new Error(
+        `No API key resolved for provider (auth mode: ${(auth as { mode?: string }).mode ?? "unknown"})`,
+      );
+    }
+    return apiKey;
+  });
 
   beforeAll(async () => {
     const baseDir = resolvePreferredOpenClawTmpDir();
