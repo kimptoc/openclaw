@@ -97,7 +97,7 @@ Welcome to the lobster tank! 🦞
   - For targeted shared-surface work, use `pnpm test:contracts:channels` or `pnpm test:contracts:plugins`
   - If you changed broader runtime behavior, still run the relevant wider lanes (`pnpm test:extensions`, `pnpm test:channels`, or `pnpm test`) before asking for review
 - If you have access to Codex, run `codex review --base origin/main` locally before opening or updating your PR. Treat this as the current highest standard of AI review, even if GitHub Codex review also runs.
-- **Do not submit test-only fixes for CI failures already present on `main`.** If `pnpm test` fails on a clean checkout of `main`, that's a known issue the core team is tracking — a PR that only fixes those tests will be closed automatically.
+- **Do not submit test-only fixes for CI failures already red on `main` CI.** If a failure is already visible in the [main branch CI runs](https://github.com/openclaw/openclaw/actions), it's a known issue the core team is tracking — a PR that only fixes those tests will be closed automatically. If you spot a *new* regression not yet shown in main CI, report it as an issue first.
 - Ensure CI checks pass
 - Keep PRs focused (one thing per PR; do not mix unrelated concerns)
 - Describe what & why
