@@ -83,7 +83,8 @@ Welcome to the lobster tank! 🦞
 
 1. **Bugs & small fixes** → Open a PR!
 2. **New features / architecture** → Start a [GitHub Discussion](https://github.com/openclaw/openclaw/discussions) or ask in Discord first
-3. **Questions** → Discord [#help](https://discord.com/channels/1456350064065904867/1459642797895319552) / [#users-helping-users](https://discord.com/channels/1456350064065904867/1459007081603403828)
+3. **Failing CI on `main`** → Do not open a PR that only fixes tests or CI for a failure already present on `main`. The core team tracks and fixes these; such PRs will be closed automatically.
+4. **Questions** → Discord [#help](https://discord.com/channels/1456350064065904867/1459642797895319552) / [#users-helping-users](https://discord.com/channels/1456350064065904867/1459007081603403828)
 
 ## Before You PR
 
@@ -96,6 +97,7 @@ Welcome to the lobster tank! 🦞
   - For targeted shared-surface work, use `pnpm test:contracts:channels` or `pnpm test:contracts:plugins`
   - If you changed broader runtime behavior, still run the relevant wider lanes (`pnpm test:extensions`, `pnpm test:channels`, or `pnpm test`) before asking for review
 - If you have access to Codex, run `codex review --base origin/main` locally before opening or updating your PR. Treat this as the current highest standard of AI review, even if GitHub Codex review also runs.
+- **Do not submit test-only fixes for CI failures already present on `main`.** If `pnpm test` fails on a clean checkout of `main`, that's a known issue the core team is tracking — a PR that only fixes those tests will be closed automatically.
 - Ensure CI checks pass
 - Keep PRs focused (one thing per PR; do not mix unrelated concerns)
 - Describe what & why
