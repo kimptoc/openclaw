@@ -24,6 +24,9 @@
         "type": "string",
         "enum": ["deny", "fail"]
       },
+      "agentCommand": {
+        "type": "string"
+      },
       "strictWindowsCmdWrapper": {
         "type": "boolean"
       },
@@ -80,6 +83,10 @@
     "nonInteractivePermissions": {
       "label": "Non-Interactive Permission Policy",
       "help": "acpx policy when interactive permission prompts are unavailable."
+    },
+    "agentCommand": {
+      "label": "Agent Command",
+      "help": "Custom ACP-compatible agent command to use instead of the default acpx agent (for example 'npx --yes kilocode@latest'). Leave unset to use the built-in acpx agent."
     },
     "strictWindowsCmdWrapper": {
       "label": "Strict Windows cmd Wrapper",
