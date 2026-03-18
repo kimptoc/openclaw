@@ -37,7 +37,10 @@ import volcenginePlugin from "../../../extensions/volcengine/index.js";
 import xaiPlugin from "../../../extensions/xai/index.js";
 import xiaomiPlugin from "../../../extensions/xiaomi/index.js";
 import zaiPlugin from "../../../extensions/zai/index.js";
-import { createCapturedPluginRegistration } from "../captured-registration.js";
+import {
+  capturePluginRegistration,
+  createCapturedPluginRegistration,
+} from "../captured-registration.js";
 import { resolvePluginProviders } from "../providers.js";
 import type {
   ImageGenerationProviderPlugin,
@@ -132,25 +135,98 @@ function dedupePlugins<T extends RegistrablePlugin>(
 
 export let providerContractLoadError: Error | undefined;
 
+// All bundled provider plugins are statically imported above to bypass jiti's CJS transform.
+// jiti is incompatible with vitest vmForks (Cannot set property require of VM context which
+// has only a getter) and can produce undefined exports for plugins whose dependency chains
+// re-import from the plugin SDK. Calling capturePluginRegistration() directly here is safe
+// in all vitest pool modes and avoids the jiti module-cache divergence that makes vi.mock()
+// ineffective for jiti-loaded modules.
+const staticBundledProviderPlugins: RegistrablePlugin[] = [
+  amazonBedrockPlugin,
+  anthropicPlugin,
+  byteplusPlugin,
+  chutesPlugin,
+  cloudflareAiGatewayPlugin,
+  copilotProxyPlugin,
+  githubCopilotPlugin,
+  googlePlugin,
+  huggingFacePlugin,
+  kilocodePlugin,
+  kimiCodingPlugin,
+  minimaxPlugin,
+  mistralPlugin,
+  modelStudioPlugin,
+  moonshotPlugin,
+  nvidiaPlugin,
+  ollamaPlugin,
+  openAIPlugin,
+  opencodeGoPlugin,
+  opencodePlugin,
+  openrouterPlugin,
+  perplexityPlugin,
+  qianfanPlugin,
+  qwenPortalAuthPlugin,
+  sglangPlugin,
+  syntheticPlugin,
+  togetherPlugin,
+  venicePlugin,
+  vercelAiGatewayPlugin,
+  vllmPlugin,
+  volcenginePlugin,
+  xaiPlugin,
+  xiaomiPlugin,
+  zaiPlugin,
+];
+
+function buildStaticProviderEntries(): {
+  entries: ProviderContractEntry[];
+  succeededPluginIds: Set<string>;
+} {
+  // Process each plugin individually so one register() failure does not wipe out the rest.
+  // Track only the plugins that actually succeeded so failed ones can fall back to jiti.
+  const entries: ProviderContractEntry[] = [];
+  const succeededPluginIds = new Set<string>();
+  for (const plugin of staticBundledProviderPlugins) {
+    try {
+      const captured = capturePluginRegistration(plugin);
+      for (const provider of captured.providers) {
+        entries.push({ pluginId: plugin.id, provider });
+      }
+      succeededPluginIds.add(plugin.id);
+    } catch {
+      // Skip this plugin; it will be loaded by the jiti supplement path instead.
+    }
+  }
+  return { entries, succeededPluginIds };
+}
+
 function loadBundledProviderRegistry(): ProviderContractEntry[] {
+  // Start with statically-imported providers (reliable in all vitest pool modes).
+  // Individual register() failures fall back to jiti so no provider entries are lost.
+  const { entries: staticEntries, succeededPluginIds: staticPluginIdSet } =
+    buildStaticProviderEntries();
+
+  // Supplement with any jiti-loaded providers not covered by the static list above.
   try {
     providerContractLoadError = undefined;
-    return resolvePluginProviders({
+    const jitiEntries = resolvePluginProviders({
       bundledProviderAllowlistCompat: true,
       bundledProviderVitestCompat: true,
       cache: false,
       activate: false,
     })
-      .filter((provider): provider is ProviderPlugin & { pluginId: string } =>
-        Boolean(provider.pluginId),
+      .filter(
+        (provider): provider is ProviderPlugin & { pluginId: string } =>
+          Boolean(provider.pluginId) && !staticPluginIdSet.has(provider.pluginId as string),
       )
       .map((provider) => ({
         pluginId: provider.pluginId,
         provider,
       }));
+    return [...staticEntries, ...jitiEntries];
   } catch (error) {
     providerContractLoadError = error instanceof Error ? error : new Error(String(error));
-    return [];
+    return staticEntries;
   }
 }
 
