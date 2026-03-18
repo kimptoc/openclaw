@@ -384,6 +384,9 @@ export function createSessionStatusTool(opts?: {
             });
             if (formatted && !formatted.startsWith("error:")) {
               usageLine = `📊 Usage: ${formatted}`;
+            } else if (!snapshot.error && snapshot.plan) {
+              // Balance-only provider (no quota windows) — show plan label directly.
+              usageLine = `📊 Usage: ${snapshot.displayName} ${snapshot.plan}`;
             }
           }
         } catch {

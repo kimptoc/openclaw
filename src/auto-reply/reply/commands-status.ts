@@ -94,7 +94,7 @@ export async function buildStatusReply(params: {
         agentDir: statusAgentDir,
       });
       const usageEntry = usageSummary.providers[0];
-      if (usageEntry && !usageEntry.error && usageEntry.windows.length > 0) {
+      if (usageEntry && !usageEntry.error) {
         const summaryLine = formatUsageWindowSummary(usageEntry, {
           now: Date.now(),
           maxWindows: 2,
@@ -102,6 +102,9 @@ export async function buildStatusReply(params: {
         });
         if (summaryLine) {
           usageLine = `📊 Usage: ${summaryLine}`;
+        } else if (usageEntry.plan) {
+          // Balance-only provider (no quota windows) — show plan label directly.
+          usageLine = `📊 Usage: ${usageEntry.displayName} ${usageEntry.plan}`;
         }
       }
     } catch {
